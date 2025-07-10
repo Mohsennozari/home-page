@@ -1,4 +1,3 @@
-/* === ریست اولیه === */
 * {
   margin: 0;
   padding: 0;
@@ -6,7 +5,7 @@
 }
 
 body {
-  font-family: 'Vazir', sans-serif;
+  font-family: 'Vazirmatn', sans-serif;
   background-color: #f3f4f6;
   color: #333;
   line-height: 1.6;
@@ -30,7 +29,7 @@ body {
 
 /* === ساختار داخلی هدر === */
 .container {
-  max-width: 1200px;
+  max-width: 80vw;
   margin: auto;
   padding: 0 1rem;
   display: flex;
@@ -78,93 +77,93 @@ body {
   background-color: #1e40af;
 }
 
-/* === ریسپانسیو برای موبایل === */
-@media (max-width: 768px) {
-  .main-header {
-    width: 90%;
-    right: auto;
-    left: auto;
-    margin: 10px auto;
-    border-radius: 10px;
-    padding: 1rem;
-  }
-
-  .container {
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .main-nav {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 0.5rem;
-  }
-
-  .login-btn {
-    align-self: center;
-    width: 100%;
-    max-width: 200px;
-  }
-}/* بخش Hero کل صفحه (بدون توجه به هدر) */
+/* === بخش Hero === */
 .hero-section {
+  background-image: url("WebsiteJpg_XL-FSOIL_Main Visual_Orange_Website.jpg");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
   display: flex;
-  height: 100vh; /* کل ارتفاع ویوپورت */
-  width: 100vw;  /* کل عرض ویوپورت */
+  overflow: hidden;
+  position:absolute;
   top: 0;
-  left: 0;
-  position: absolute;
-  z-index: 1;
-  overflow: hidden; 
- 
 }
 
-/* بخش چپ */
+/* === بخش چپ === */
 .hero-left {
-  width: 30%;
- 
+  width: 70%;
   padding: 40px;
-  background-color: #ffc400; /* استایل دلخواه */
+  background-color: #ffc40000;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
-/* بخش راست */
-.hero-right {
-  width: 70%;
+.hero-title {
+  font-size: 30px;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
 
-  
-  background-color: #037e3a; /* استایل متفاوت */
+.hero-description {
+  color: #606060;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.cta-btn {
+  font-size: 16px;
+  padding: 10px 20px;
+  background-color: #505050;
+  color: #ffffff;
+  font-weight: 900;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.cta-btn:hover {
+  background-color: #404040;
+}
+
+/* === بخش راست === */
+.hero-right {
+  width: 30%;
+  background-color: #037e3a00;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 40px;
 }
 
-/* تنظیم تصویر در سمت راست */
+/* === تنظیم تصویر در سمت راست === */
 .hero-right img {
-  max-width: 100%;
+  max-width: 70%;
   height: auto;
   border-radius: 15px;
 }
 
-/* ریسپانسیو: در موبایل بخش‌ها روی هم قرار بگیرند */
+/* === ریسپانسیو برای موبایل === */
 @media (max-width: 768px) {
+  .main-header {
+    width: 90%;
+    right: 5%;
+  }
   .hero-section {
     flex-direction: column;
-    padding-top: 0;
     height: auto;
   }
-
   .hero-left, .hero-right {
-    flex: none;
     width: 100%;
     padding: 20px;
   }
-
   .hero-right img {
-    max-width: 100%;
+    max-width: 90%;
   }
 }

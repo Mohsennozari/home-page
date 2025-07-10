@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحلیل بافت خاک</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://v1.fontapi.ir/css/Vazir');
+        body {
+            font-family: 'Vazir', sans-serif;
+            background-color: #f7fafc;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+        }
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1a4971;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 16px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: #ffffff;
+            border: none;
+        }
+        .btn-blue {
+            background-color: #2563eb;
+        }
+        .btn-blue:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-green {
+            background-color: #16a34a;
+        }
+        .btn-green:hover {
+            background-color: #15803d;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .text-center {
+            text-align: center;
+        }
+        ul {
+            list-style: disc;
+            padding-right: 24px;
+        }
+        #texture_triangle, #grain_size_curve {
+            display: flex;
+            justify-content: center;
+        }
+        .error {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تحلیل بافت خاک</h1>
+
+        <!-- انتخاب حالت -->
+        <div class="card">
+            <h2>انتخاب حالت</h2>
+            <div class="input-group">
+                <label for="mode">حالت:</label>
+                <select id="mode" onchange="toggleMode()">
+                    <option value="simple">ساده</option>
+                    <option value="advanced">پیشرفته</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- فرم ساده -->
+        <div id="simple_form" class="card">
+            <h2>ورودی‌های ساده</h2>
+            <div class="grid">
+                <div class="input-group">
+                    <label for="simple_temperature">دما (°C):</label>
+                    <input type="number" id="simple_temperature" step="0.1" required>
+                    <div id="simple_temperature_error" class="error"></div>
+                </div>
+                <div class="input-group">
+                    <label for="simple_dispersant">محلول پراکنده‌کننده (g/L):</label>
+                    <input type="number" id="simple_dispersant" value="50" required>
+                </div>
+                <div class="input-group">
+                    <label for="simple_cylinder_volume">حجم استوانه (mL):</label>
+                    <input type="number" id="simple_cylinder_volume" value="1000" required>
+                </div>
+                <div class="input-group">
+                    <label for="simple_standard">استاندارد:</label>
+                    <select id="simple_standard">
+                        <option value="USDA">USDA</option>
+                        <option value="FAO">FAO</option>
+                        <option value="ISSS">ISSS</option>
+                        <option value="Custom">سفارشی</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="simple_sample_count">تعداد نمونه‌ها:</label>
+                    <input type="number" id="simple_sample_count" min="1" value="1" required>
+                </div>
+            </div>
+            <button onclick="generateSimpleSampleTable()" class="btn btn-blue">ایجاد جدول نمونه‌ها</button>
+            <div id="simple_sample_table" class="card"></div>
+        </div>
+
+        <!-- فرم پیشرفته -->
+        <div id="advanced_form" class="card" style="display: none;">
+            <h2>ورودی‌های پیشرفته</h2>
+            <!-- اطلاعات کلی -->
+            <h3>اطلاعات کلی</h3>
+            <div class="grid">
+                <div class="input-group">
+                    <label for="adv_sample_id">شناسه نمونه:</label>
+                    <input type="text" id="adv_sample_id" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_test_date">تاریخ آزمایش:</label>
+                    <input type="date" id="adv_test_date" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_lab_name">نام آزمایشگاه:</label>
+                    <input type="text" id="adv_lab_name" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_operator">اپراتور:</label>
+                    <input type="text" id="adv_operator" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_standard">استاندارد:</label>
+                    <select id="adv_standard">
+                        <option value="USDA">USDA</option>
+                        <option value="FAO">FAO</option>
+                        <option value="ISSS">ISSS</option>
+                        <option value="Custom">سفارشی</option>
+                    </select>
+                </div>
+            </div>
+            <!-- مشخصات خاک -->
+            <h3>مشخصات خاک</h3>
+            <div class="grid">
+                <div class="input-group">
+                    <label for="adv_dry_weight">وزن خشک خاک (g):</label>
+                    <input type="number" id="adv_dry_weight" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_specific_gravity">چگالی ذرات (Gₛ):</label>
+                    <input type="number" id="adv_specific_gravity" step="0.01" value="2.65" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_sieve_200">درصد عبوری الک #200 (%):</label>
+                    <input type="number" id="adv_sieve_200" step="0.1" required>
+                </div>
+            </div>
+            <!-- تنظیمات هیدرومتر -->
+            <h3>تنظیمات هیدرومتر</h3>
+            <div class="grid">
+                <div class="input-group">
+                    <label for="adv_hydrometer_type">نوع هیدرومتر:</label>
+                    <select id="adv_hydrometer_type">
+                        <option value="ASTM 152H">ASTM 152H</option>
+                        <option value="ASTM 151H">ASTM 151H</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="adv_calib_temp">دمای کالیبراسیون (°C):</label>
+                    <input type="number" id="adv_calib_temp" step="0.1" value="20" required>
+                    <div id="adv_calib_temp_error" class="error"></div>
+                </div>
+                <div class="input-group">
+                    <label for="adv_meniscus">اصلاح منیسک (Fₘ):</label>
+                    <input type="number" id="adv_meniscus" step="0.1" value="0" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_temp_correction">اصلاح دمایی (Cₜ):</label>
+                    <input type="number" id="adv_temp_correction" step="0.1" value="0" required>
+                </div>
+            </div>
+            <!-- داده‌های آزمایش -->
+            <h3>داده‌های آزمایش</h3>
+            <div id="adv_readings_table">
+                <table>
+                    <tr>
+                        <th>زمان قرائت (دقیقه)</th>
+                        <th>قرائت هیدرومتر</th>
+                        <th>دمای سوسپانسیون (°C)</th>
+                    </tr>
+                    <tr>
+                        <td><input type="number" class="adv_reading_time" value="0.5" required></td>
+                        <td><input type="number" class="adv_hydrometer_reading" step="0.1" required></td>
+                        <td><input type="number" class="adv_suspension_temp" step="0.1" required></td>
+                    </tr>
+                </table>
+                <button onclick="addReadingRow()" class="btn btn-blue">افزودن قرائت</button>
+            </div>
+            <!-- تنظیمات محلول -->
+            <h3>تنظیمات محلول</h3>
+            <div class="grid">
+                <div class="input-group">
+                    <label for="adv_suspension_volume">حجم سوسپانسیون (mL):</label>
+                    <input type="number" id="adv_suspension_volume" value="1000" required>
+                </div>
+                <div class="input-group">
+                    <label for="adv_dispersant">ماده پراکنده‌کننده:</label>
+                    <select id="adv_dispersant">
+                        <option value="Sodium Hexametaphosphate">سدیم هگزامتافسفات</option>
+                        <option value="Other">سایر</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="adv_dispersant_concentration">غلظت ماده پراکنده‌کننده (g/L):</label>
+                    <input type="number" id="adv_dispersant_concentration" value="50" required>
+                </div>
+            </div>
+            <!-- محاسبات اختیاری -->
+            <h3>محاسبات اختیاری</h3>
+            <div class="input-group">
+                <label>اندازه ذرات برای گزارش:</label>
+                <label><input type="checkbox" id="adv_d10"> D10</label>
+                <label><input type="checkbox" id="adv_d30"> D30</label>
+                <label><input type="checkbox" id="adv_d60"> D60</label>
+            </div>
+        </div>
+
+        <!-- دکمه محاسبه -->
+        <div class="text-center">
+            <button onclick="calculateTexture()" class="btn btn-green">محاسبه</button>
+            <button onclick="exportPDF()" class="btn btn-blue">خروجی PDF</button>
+        </div>
+
+        <!-- نتایج -->
+        <div id="results" class="card"></div>
+
+        <!-- نمودارها -->
+        <div class="card">
+            <h2>مثلث بافت خاک</h2>
+            <div id="texture_triangle"></div>
+        </div>
+        <div class="card">
+            <h2>منحنی دانه‌بندی</h2>
+            <div id="grain_size_curve"></div>
+        </div>
+
+        <!-- منابع -->
+        <div id="references" class="card"></div>
+    </div>
+
+    <script>
+        // تعریف استانداردها
+        const standards = {
+            USDA: { sand: [0.05, 2], silt: [0.002, 0.05], clay: [0, 0.002] },
+            FAO: { sand: [0.05, 2], silt: [0.002, 0.05], clay: [0, 0.002] },
+            ISSS: { sand: [0.02, 2], silt: [0.002, 0.02], clay: [0, 0.002] },
+            Custom: { sand: [0.05, 2], silt: [0.002, 0.05], clay: [0, 0.002] }
+        };
+
+        // تغییر حالت
+        function toggleMode() {
+            const mode = document.getElementById('mode').value;
+            document.getElementById('simple_form').style.display = mode === 'simple' ? 'block' : 'none';
+            document.getElementById('advanced_form').style.display = mode === 'advanced' ? 'block' : 'none';
+        }
+
+        // ایجاد جدول نمونه‌ها (حالت ساده)
+        function generateSimpleSampleTable() {
+            const sampleCount = parseInt(document.getElementById('simple_sample_count').value);
+            let table = '<table><tr><th>شناسه</th><th>وزن خاک خشک (g)</th><th>قرائت هیدرومتر 40 ثانیه</th><th>قرائت هیدرومتر 2 ساعت</th></tr>';
+            for (let i = 0; i < sampleCount; i++) {
+                table += `<tr>
+                    <td><input type="text" id="simple_sample_id_${i}" value="S${i+1}"></td>
+                    <td><input type="number" id="simple_weight_${i}" required></td>
+                    <td><input type="number" id="simple_hydrometer_40s_${i}" step="0.1" required></td>
+                    <td><input type="number" id="simple_hydrometer_2h_${i}" step="0.1" required></td>
+                </tr>`;
+            }
+            table += '</table>';
+            document.getElementById('simple_sample_table').innerHTML = table;
+        }
+
+        // افزودن ردیف قرائت (حالت پیشرفته)
+        function addReadingRow() {
+            const table = document.getElementById('adv_readings_table').getElementsByTagName('table')[0];
+            const row = table.insertRow();
+            row.innerHTML = `
+                <td><input type="number" class="adv_reading_time" required></td>
+                <td><input type="number" class="adv_hydrometer_reading" step="0.1" required></td>
+                <td><input type="number" class="adv_suspension_temp" step="0.1" required></td>
+            `;
+        }
+
+        // اعتبارسنجی ورودی‌ها
+        function validateInputs(mode) {
+            if (mode === 'simple') {
+                const temp = parseFloat(document.getElementById('simple_temperature').value);
+                if (temp < 20 || temp > 30) {
+                    document.getElementById('simple_temperature_error').innerText = 'دما باید بین 20 تا 30 درجه باشد';
+                    return false;
+                }
+                return true;
+            } else {
+                const calibTemp = parseFloat(document.getElementById('adv_calib_temp').value);
+                if (calibTemp < 20 || calibTemp > 30) {
+                    document.getElementById('adv_calib_temp_error').innerText = 'دمای کالیبراسیون باید بین 20 تا 30 درجه باشد';
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        // محاسبه بافت خاک
+        function calculateTexture() {
+            const mode = document.getElementById('mode').value;
+            if (!validateInputs(mode)) return;
+
+            let results = '<h2>نتایج</h2>';
+            let points = [];
+            let grainSizeData = [];
+
+            if (mode === 'simple') {
+                const standard = document.getElementById('simple_standard').value;
+                const temperature = parseFloat(document.getElementById('simple_temperature').value);
+                const dispersant = parseFloat(document.getElementById('simple_dispersant').value);
+                const cylinderVolume = parseFloat(document.getElementById('simple_cylinder_volume').value);
+                const sampleCount = parseInt(document.getElementById('simple_sample_count').value);
+
+                results += '<table><tr><th>شناسه</th><th>شن (%)</th><th>سیلت (%)</th><th>رس (%)</th><th>بافت</th></tr>';
+                for (let i = 0; i < sampleCount; i++) {
+                    const weight = parseFloat(document.getElementById(`simple_weight_${i}`).value);
+                    let hydrometer40s = parseFloat(document.getElementById(`simple_hydrometer_40s_${i}`).value);
+                    let hydrometer2h = parseFloat(document.getElementById(`simple_hydrometer_2h_${i}`).value);
+                    const sampleId = document.getElementById(`simple_sample_id_${i}`).value;
+
+                    // تصحیح دما
+                    const tempCorrection = (temperature - 20) * 0.3;
+                    hydrometer40s += tempCorrection;
+                    hydrometer2h += tempCorrection;
+
+                    // محاسبه درصد رس
+                    const clayPercent = (hydrometer2h / weight) * 100;
+                    // محاسبه درصد سیلت
+                    const siltPercent = ((hydrometer40s - hydrometer2h) / weight) * 100;
+                    // محاسبه درصد شن
+                    const sandPercent = 100 - (clayPercent + siltPercent);
+
+                    // تعیین بافت خاک
+                    const texture = getSoilTexture(sandPercent, siltPercent, clayPercent, standard);
+
+                    results += `<tr>
+                        <td>${sampleId}</td>
+                        <td>${sandPercent.toFixed(2)}</td>
+                        <td>${siltPercent.toFixed(2)}</td>
+                        <td>${clayPercent.toFixed(2)}</td>
+                        <td>${texture}</td>
+                    </tr>`;
+
+                    points.push({ sand: sandPercent, silt: siltPercent, clay: clayPercent, id: sampleId });
+                    grainSizeData.push({ time: 0.667, percentFiner: hydrometer40s / weight * 100 });
+                    grainSizeData.push({ time: 120, percentFiner: hydrometer2h / weight * 100 });
+
+                    // ذخیره داده‌ها
+                    localStorage.setItem(`simple_sample_${i}`, JSON.stringify({
+                        id: sampleId, weight, hydrometer40s, hydrometer2h, sandPercent, siltPercent, clayPercent, texture
+                    }));
+                }
+                results += '</table>';
+            } else {
+                const standard = document.getElementById('adv_standard').value;
+                const sampleId = document.getElementById('adv_sample_id').value;
+                const testDate = document.getElementById('adv_test_date').value;
+                const labName = document.getElementById('adv_lab_name').value;
+                const operator = document.getElementById('adv_operator').value;
+                const dryWeight = parseFloat(document.getElementById('adv_dry_weight').value);
+                const specificGravity = parseFloat(document.getElementById('adv_specific_gravity').value);
+                const sieve200 = parseFloat(document.getElementById('adv_sieve_200').value);
+                const hydrometerType = document.getElementById('adv_hydrometer_type').value;
+                const calibTemp = parseFloat(document.getElementById('adv_calib_temp').value);
+                const meniscus = parseFloat(document.getElementById('adv_meniscus').value);
+                const tempCorrection = parseFloat(document.getElementById('adv_temp_correction').value);
+                const suspensionVolume = parseFloat(document.getElementById('adv_suspension_volume').value);
+                const dispersant = document.getElementById('adv_dispersant').value;
+                const dispersantConcentration = parseFloat(document.getElementById('adv_dispersant_concentration').value);
+                const d10 = document.getElementById('adv_d10').checked;
+                const d30 = document.getElementById('adv_d30').checked;
+                const d60 = document.getElementById('adv_d60').checked;
+
+                const readingTimes = Array.from(document.getElementsByClassName('adv_reading_time')).map(el => parseFloat(el.value));
+                const hydrometerReadings = Array.from(document.getElementsByClassName('adv_hydrometer_reading')).map(el => parseFloat(el.value));
+                const suspensionTemps = Array.from(document.getElementsByClassName('adv_suspension_temp')).map(el => parseFloat(el.value));
+
+                results += '<table><tr><th>شناسه</th><th>شن (%)</th><th>سیلت (%)</th><th>رس (%)</th><th>بافت</th><th>درصد ریزدانه</th></tr>';
+                let percentFinerData = [];
+
+                // محاسبه درصد ریزدانه
+                for (let i = 0; i < readingTimes.length; i++) {
+                    let reading = hydrometerReadings[i] + meniscus + tempCorrection * (suspensionTemps[i] - calibTemp);
+                    const percentFiner = (reading / dryWeight) * 100 * sieve200 / 100;
+                    percentFinerData.push({ time: readingTimes[i], percentFiner, diameter: calculateParticleDiameter(readingTimes[i], specificGravity, suspensionTemps[i]) });
+                }
+
+                // محاسبه درصد شن، سیلت، رس
+                const clayPercent = percentFinerData[percentFinerData.length - 1].percentFiner;
+                const siltPercent = percentFinerData[0].percentFiner - clayPercent;
+                const sandPercent = 100 - percentFinerData[0].percentFiner;
+                const texture = getSoilTexture(sandPercent, siltPercent, clayPercent, standard);
+
+                results += `<tr>
+                    <td>${sampleId}</td>
+                    <td>${sandPercent.toFixed(2)}</td>
+                    <td>${siltPercent.toFixed(2)}</td>
+                    <td>${clayPercent.toFixed(2)}</td>
+                    <td>${texture}</td>
+                    <td>${percentFinerData[0].percentFiner.toFixed(2)}</td>
+                </tr>`;
+                results += '</table>';
+
+                // محاسبات اختیاری (D10, D30, D60)
+                let optionalResults = '';
+                if (d10 || d30 || d60) {
+                    optionalResults += '<h3>اندازه ذرات</h3><table><tr><th>پارامتر</th><th>مقدار (mm)</th></tr>';
+                    if (d10) {
+                        const d10Value = interpolateParticleSize(percentFinerData, 10);
+                        optionalResults += `<tr><td>D10</td><td>${d10Value.toFixed(4)}</td></tr>`;
+                    }
+                    if (d30) {
+                        const d30Value = interpolateParticleSize(percentFinerData, 30);
+                        optionalResults += `<tr><td>D30</td><td>${d30Value.toFixed(4)}</td></tr>`;
+                    }
+                    if (d60) {
+                        const d60Value = interpolateParticleSize(percentFinerData, 60);
+                        optionalResults += `<tr><td>D60</td><td>${d60Value.toFixed(4)}</td></tr>`;
+                    }
+                    optionalResults += '</table>';
+                }
+                results += optionalResults;
+
+                points.push({ sand: sandPercent, silt: siltPercent, clay: clayPercent, id: sampleId });
+                grainSizeData = percentFinerData;
+
+                // ذخیره داده‌ها
+                localStorage.setItem('adv_sample', JSON.stringify({
+                    sampleId, testDate, labName, operator, standard, dryWeight, specificGravity, sieve200,
+                    hydrometerType, calibTemp, meniscus, tempCorrection, suspensionVolume, dispersant,
+                    dispersantConcentration, readingTimes, hydrometerReadings, suspensionTemps,
+                    sandPercent, siltPercent, clayPercent, texture, percentFinerData
+                }));
+            }
+
+            document.getElementById('results').innerHTML = results;
+
+            // نمایش منابع
+            document.getElementById('references').innerHTML = `
+                <h2>منابع و استانداردها</h2>
+                <p>استاندارد استفاده‌شده: ${mode === 'simple' ? document.getElementById('simple_standard').value : document.getElementById('adv_standard').value}</p>
+                <p>فرمول‌ها:</p>
+                <ul>
+                    <li>تصحیح هیدرومتر: R_c = R_a + F_m + C_t (ASTM D422)</li>
+                    <li>درصد ریزدانه: %Finer = (R_c / W_s) × 100 × (%Sieve200 / 100)</li>
+                    <li>درصد رس: %Clay = %Finer(t_max)</li>
+                    <li>درصد سیلت: %Silt = %Finer(t_1) - %Clay</li>
+                    <li>درصد شن: %Sand = 100 - %Finer(t_1)</li>
+                </ul>
+                <p>منابع:</p>
+                <ul>
+                    <li>USDA Soil Survey Manual (2017)</li>
+                    <li>FAO Guidelines for Soil Description (2006)</li>
+                    <li>ASTM D422-63: Standard Test Method for Particle-Size Analysis</li>
+                    <li>ASTM D7928: Standard Test Method for Particle-Size Distribution</li>
+                    <li>ISSS: World Reference Base for Soil Resources (2006)</li>
+                </ul>
+            `;
+
+            drawTextureTriangle(points, mode === 'simple' ? document.getElementById('simple_standard').value : document.getElementById('adv_standard').value);
+            drawGrainSizeCurve(grainSizeData);
+        }
+
+        // محاسبه قطر ذرات (استوکس)
+        function calculateParticleDiameter(time, specificGravity, temp) {
+            const viscosity = 0.001002 * Math.pow(1.0046, 20 - temp); // ویسکوزیته آب
+            const K = Math.sqrt((specificGravity - 1) * 981 / (18 * viscosity));
+            return K * Math.sqrt(1 / (time * 60));
+        }
+
+        // درون‌یابی برای D10, D30, D60
+        function interpolateParticleSize(data, percent) {
+            data.sort((a, b) => b.percentFiner - a.percentFiner);
+            for (let i = 0; i < data.length - 1; i++) {
+                if (data[i].percentFiner >= percent && data[i + 1].percentFiner <= percent) {
+                    const x1 = data[i].percentFiner, x2 = data[i + 1].percentFiner;
+                    const y1 = data[i].diameter, y2 = data[i + 1].diameter;
+                    return y1 + (percent - x1) * (y2 - y1) / (x2 - x1);
+                }
+            }
+            return 0;
+        }
+
+        // تعیین بافت خاک
+        function getSoilTexture(sand, silt, clay, standard) {
+            if (standard === 'USDA' || standard === 'FAO') {
+                if (clay >= 40) return 'رسی';
+                if (sand >= 50) return 'شنی';
+                if (silt >= 50) return 'سیلتی';
+                return 'لوم';
+            } else if (standard === 'ISSS') {
+                if (clay >= 35) return 'رسی';
+                if (sand >= 60) return 'شنی';
+                if (silt >= 40) return 'سیلتی';
+                return 'لوم';
+            }
+            return 'نامشخص';
+        }
+
+        // رسم مثلث بافت خاک
+        function setup() {
+            let canvas1 = createCanvas(400, 400);
+            canvas1.parent('texture_triangle');
+            let canvas2 = createCanvas(400, 400);
+            canvas2.parent('grain_size_curve');
+        }
+
+        function drawTextureTriangle(points, standard) {
+            background(255);
+            // رسم مثلث
+            stroke(0);
+            fill(255);
+            triangle(200, 50, 50, 350, 350, 350);
+
+            // رسم نقاط نمونه‌ها
+            points.forEach(point => {
+                let x = 200 + (point.sand - 50) * 3;
+                let y = 350 - (point.clay * 3);
+                fill(255, 0, 0);
+                circle(x, y, 8);
+                textSize(12);
+                fill(0);
+                text(point.id, x + 10, y);
+            });
+
+            // برچسب‌ها
+            textSize(14);
+            fill(0);
+            text('شن', 50, 370);
+            text('رس', 350, 370);
+            text('سیلت', 200, 30);
+        }
+
+        // رسم منحنی دانه‌بندی
+        function drawGrainSizeCurve(data) {
+            background(255);
+            stroke(0);
+            fill(255);
+            rect(50, 50, 300, 300);
+
+            // محورها
+            line(50, 350, 350, 350); // محور x
+            line(50, 50, 50, 350); // محور y
+            textSize(12);
+            text('قطر ذرات (mm)', 150, 370);
+            text('درصد ریزدانه', 30, 50);
+
+            // رسم داده‌ها
+            data.sort((a, b) => a.diameter - b.diameter);
+            beginShape();
+            noFill();
+            stroke(255, 0, 0);
+            for (let d of data) {
+                let x = 50 + Math.log10(d.diameter) * 100 + 150;
+                let y = 350 - (d.percentFiner * 3);
+                vertex(x, y);
+            }
+            endShape();
+
+            // برچسب‌های محور
+            for (let i = 0; i <= 100; i += 20) {
+                text(i, 30, 350 - i * 3);
+            }
+            for (let i = -3; i <= 1; i++) {
+                text(Math.pow(10, i).toFixed(3), 50 + i * 100 + 150, 370);
+            }
+        }
+
+        // خروجی PDF
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFont('Vazir');
+            doc.text('تحلیل بافت خاک', 100, 10, { align: 'center' });
+            doc.text(document.getElementById('results').innerText, 10, 20);
+            doc.text(document.getElementById('references').innerText, 10, 100);
+            doc.save('soil_texture_report.pdf');
+        }
+    </script>
+</body>
+</html>
